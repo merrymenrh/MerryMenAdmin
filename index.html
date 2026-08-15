@@ -3,156 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sherwood Vault - Admin Sanctum</title>
+    <title>Sherwood Vault Dashboard</title>
     
-    <!-- Primary and Secondary Web3 Network Fallback Nodes -->
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://unpkg.com"></script>
+    <!-- Dynamically imports the minimal viem build nodes natively on GitHub Pages -->
+    <script type="module">
+        import { createWalletClient, createPublicClient, custom, http, parseEther, formatUnits } from "https://esm.sh";
+        window.viemModules = { createWalletClient, createPublicClient, custom, http, parseEther, formatUnits };
+    </script>
     
     <style>
-        body { background-color: #0b0f0c; color: #e2e8f0; font-family: sans-serif; padding: 20px; display: flex; justify-content: center; }
-        .admin-dashboard { background: #1a1111; padding: 24px; border-radius: 12px; border: 1px solid #4a1c1c; max-width: 420px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .admin-title { font-size: 16px; color: #ff6b6b; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; text-align: center; }
-        .sect-title { font-size: 11px; color: #b57c7c; text-transform: uppercase; margin: 12px 0 6px 0; border-bottom: 1px dashed #4a1c1c; padding-bottom: 2px; }
-        .input-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-        .input-field { background: #120d0d; border: 1px solid #3d1d1d; color: #ffffff; padding: 8px; border-radius: 6px; font-family: monospace; }
-        .admin-btn { background: #3d1a1a; border: 1px solid #ff6b6b; color: #ff6b6b; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
-        .wallet-top-btn { background: none; border: 1px dashed #4a1c1c; color: #a88787; width: 100%; padding: 10px; border-radius: 8px; margin-bottom: 12px; cursor: pointer; }
-        .wallet-top-btn.connected { border-style: solid; border-color: #ff6b6b; color: #ff6b6b; }
-        .ledger-box { margin-top: 12px; background: #0a0707; border: 1px solid #241414; border-radius: 6px; padding: 8px; min-height: 24px; font-family: monospace; font-size: 11px; color: #c49595; }
-        #sanctum-content { display: none; }
+        body { background-color: #0b0f0c; margin: 0; padding: 40px 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-image: radial-gradient(circle at center, #132218 0%, #0b0f0c 100%); }
+        .vault-dashboard { background: #121814; color: #e2e8f0; font-family: Georgia, serif; padding: 28px; border-radius: 20px; border: 1px solid #233529; max-width: 400px; width: 100%; box-shadow: 0 15px 35px rgba(0, 15, 5, 0.6); }
+        .vault-graphic-container { width: 100%; height: 140px; border-radius: 14px; margin-bottom: 24px; overflow: hidden; border: 1px solid #2c4233; background: linear-gradient(180deg, #0e1a12 0%, #060a07 100%); display: flex; justify-content: center; align-items: center; box-shadow: inset 0 0 25px rgba(0,0,0,0.9); }
+        .mystic-lock { width: 60px; height: 60px; border: 4px double #dfb15b; border-radius: 50%; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: 0 0 20px rgba(223, 177, 91, 0.2); animation: orbPulse 4s infinite ease-in-out; }
+        .mystic-lock::before { content: "ᛋ"; color: #dfb15b; font-size: 24px; text-shadow: 0 0 10px rgba(223, 177, 91, 0.6); }
+        .mystic-lock::after { content: ""; position: absolute; width: 74px; height: 74px; border: 1px dashed rgba(163, 184, 153, 0.4); border-radius: 50%; animation: spinRing 20s linear infinite; }
+        .metric-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #1d2b21; }
+        .metric-label { font-size: 13px; color: #a3b899; font-weight: 500; letter-spacing: 0.5px; }
+        .metric-value { font-size: 17px; font-weight: 700; color: #dfb15b; text-shadow: 0 0 12px rgba(223, 177, 91, 0.35); font-family: -apple-system, sans-serif; }
+        .conversion-panel { margin-top: 24px; padding: 16px; background: #090d0a; border-radius: 12px; border: 1px solid #1a261e; }
+        .panel-title { font-size: 12px; color: #648268; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; text-align: center; font-family: -apple-system, sans-serif; }
+        .tab-container { display: flex; gap: 8px; margin-bottom: 12px; }
+        .tab-btn { flex: 1; background: #111813; border: 1px solid #1d2b21; color: #a3b899; padding: 8px; font-family: Georgia, serif; font-size: 11px; border-radius: 6px; cursor: pointer; }
+        .tab-btn.active { border-color: #dfb15b; color: #dfb15b; background: #17241b; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+        .input-field { background: #121814; border: 1px solid #233529; color: #ffffff; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 14px; }
+        .interact-btn { background: linear-gradient(135deg, #1e3325 0%, #15241a 100%); border: 1px solid #dfb15b; color: #dfb15b; font-family: Georgia, serif; font-size: 14px; font-weight: bold; width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
+        .interact-btn:hover:not(:disabled) { background: #dfb15b; color: #0b0f0c; box-shadow: 0 0 15px rgba(223, 177, 91, 0.3); }
+        .interact-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .wallet-top-btn { background: none; border: 1px dashed #233529; color: #a3b899; width: 100%; padding: 10px; font-family: Georgia, serif; font-size: 13px; border-radius: 8px; margin-bottom: 16px; cursor: pointer; }
+        .wallet-top-btn.connected { border-style: solid; border-color: #dfb15b; color: #dfb15b; }
+        .ledger-box { margin-top: 20px; background: #060907; border: 1px solid #141f18; border-radius: 8px; padding: 10px; height: 40px; overflow: hidden; }
+        .ledger-content { font-family: monospace; font-size: 11px; color: #8fa386; line-height: 1.5; }
+        @keyframes orbPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(223, 177, 91, 0.2); } 50% { transform: scale(1.04); box-shadow: 0 0 25px rgba(223, 177, 91, 0.4); } }
+        @keyframes spinRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="admin-dashboard">
-        <button class="wallet-top-btn" id="wallet-btn" onclick="connectAdminWallet()">Awaken Guardian Connection</button>
-        <div class="admin-title">Vault Guardian Sanctum</div>
-        <div id="sanctum-content">
-            <div class="sect-title">1. Bulk Inventory Management</div>
-            <div class="input-group">
-                <input type="text" class="input-field" id="batch-deposit-input" placeholder="e.g. 2001, 2002">
-                <button class="admin-btn" onclick="executeAdminBatchDeposit()">Execute Batch Inventory Seed</button>
+    <div class="vault-dashboard">
+        <button class="wallet-top-btn" id="wallet-btn" onclick="connectForestWallet()">Awaken Wallet Connection</button>
+        <div class="vault-graphic-container"><div class="mystic-lock"></div></div>
+
+        <div class="metric-row"><span class="metric-label">Vault Inventory Supply:</span><span class="metric-value" id="inventory-count">Loading...</span></div>
+        <div class="metric-row"><span class="metric-label">Standard Relic Wrap Value:</span><span class="metric-value" id="standard-price">Loading...</span></div>
+        <div class="metric-row"><span class="metric-label">Premium 1/1 Mystic Value:</span><span class="metric-value" id="premium-price">Loading...</span></div>
+        <div class="metric-row"><span class="metric-label">Live Backing Pool Reserve:</span><span class="metric-value" id="yield-pool">Loading...</span></div>
+
+        <div class="conversion-panel">
+            <div class="panel-title">Sherwood Exchange Matrix</div>
+            <div class="tab-container">
+                <button class="tab-btn active" id="tab-wrap" onclick="switchAction('wrap')">Wrap NFT ➔ $DERP</button>
+                <button class="tab-btn" id="tab-unwrap" onclick="switchAction('unwrap')">Unwrap $DERP ➔ NFT</button>
             </div>
-            <div class="sect-title">2. Pure Liquidity Pool Injector</div>
-            <div class="input-group">
-                <input type="number" class="input-field" id="liquidity-input" placeholder="Amount of $DERP">
-                <button class="admin-btn" onclick="executeAdminLiquidityInjection()">Inject Pool Liquidity</button>
+            
+            <div class="input-group" id="input-block">
+                <label style="font-size:11px; color:#648268; margin-bottom:4px;">Enter Token ID to Deposit:</label>
+                <input type="number" class="input-field" id="action-input" placeholder="e.g. 15">
             </div>
-            <div class="sect-title">3. Fee Constraints Configuration</div>
-            <div class="input-group">
-                <input type="number" class="input-field" id="fee-input" placeholder="400 = 4%">
-                <button class="admin-btn" onclick="executeAdminFeeAdjustment()">Modify System Fees</button>
-            </div>
-            <div class="sect-title">4. Emergency Extraction Procedures</div>
-            <div style="display: flex; gap: 8px; margin-top: 4px;">
-                <div style="flex: 1;"><input type="number" class="input-field" id="w-tok" placeholder="Tokens" style="width:85%;"><button class="admin-btn" style="padding:6px;font-size:11px;margin-top:4px;" onclick="executeEmergencyTokenClawback()">Clawback $DERP</button></div>
-                <div style="flex: 1;"><input type="number" class="input-field" id="w-nft" placeholder="NFT ID" style="width:85%;"><button class="admin-btn" style="padding:6px;font-size:11px;margin-top:4px;" onclick="executeEmergencyNftClawback()">Clawback NFT</button></div>
-            </div>
+
+            <button class="interact-btn" id="action-btn" onclick="executeConversion()" disabled>Connect Wallet to Begin</button>
         </div>
-        <div class="ledger-box" id="ledger-content">🔒 Synchronizing forest components...</div>
+
+        <div class="ledger-box"><div class="ledger-content" id="ledger-content">🌿 Sherwood Liquid Vault active.</div></div>
     </div>
     <script>
         const VAULT_ADDRESS = "0x28C096D2546f07f8170727b1D9618862fCfd8022";
         const NFT_CONTRACT = "0x321135606e0B035E30b4B566f6Fb9bCF75E82902"; 
         const TARGET_TOKEN = "0x6543B7746ca744C4bb2198191e71f40FF04c41b9";
-        const ROBINHOOD_CHAIN_ID = "0x1237"; 
-        let userWalletSigner = null;
+        
+        const robinhoodChain = { id: 4663, name: 'Robinhood Chain', rpcUrls: { default: { http: ['https://robinhood.com'] } } };
+        let activeMode = 'wrap';
 
-        const vaultAbi = ["function owner() public view returns (address)","function adminBatchDeposit(uint256[] calldata tokenIds) external","function setWrapFee(uint256 _newFeeBps) external","function emergencyWithdrawTokens(uint256 amount) external","function emergencyWithdrawNFT(uint256 tokenId) external"];
-        const erc20Abi = ["function transfer(address to, uint256 amount) external returns (bool)","function approve(address spender, uint256 value) external returns (bool)"];
+        const vaultAbi = [
+            { name: "getVaultInventory", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256[]" }] },
+            { name: "getCurrentValueWithYield", type: "function", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
+            { name: "wrap", type: "function", stateMutability: "nonpayable", inputs: [{ type: "uint256" }], outputs: [] },
+            { name: "unwrap", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] }
+        ];
+        const erc20Abi = [{ name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] }, { name: "approve", type: "function", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [{ type: "bool" }] }];
+        const erc721Abi = [{ name: "approve", type: "function", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [] }];
 
-        const pushLog = (m) => { document.getElementById('ledger-content').innerText = m; };
+        async function fetchBlockchainData() {
+            if (!window.viemModules) return setTimeout(fetchBlockchainData, 500);
+            try {
+                const { createPublicClient, http, formatUnits } = window.viemModules;
+                const publicClient = createPublicClient({ chain: robinhoodChain, transport: http() });
 
-        function verifyEthersInitialization() {
-            if (typeof window.ethers !== 'undefined' || typeof ethers !== 'undefined') {
-                pushLog("🔒 Sanctum locked. Connect admin wallet.");
+                const inventory = await publicClient.readContract({ address: VAULT_ADDRESS, abi: vaultAbi, functionName: 'getVaultInventory' });
+                document.getElementById('inventory-count').innerText = inventory.length + " NFTs Locked";
+
+                const stdPrice = await publicClient.readContract({ address: VAULT_ADDRESS, abi: vaultAbi, functionName: 'getCurrentValueWithYield', args: [1n] });
+                document.getElementById('standard-price').innerText = Math.floor(Number(formatUnits(stdPrice, 18))).toLocaleString() + " $DERP";
+
+                const premPrice = await publicClient.readContract({ address: VAULT_ADDRESS, abi: vaultAbi, functionName: 'getCurrentValueWithYield', args: [263n] });
+                document.getElementById('premium-price').innerText = Math.floor(Number(formatUnits(premPrice, 18))).toLocaleString() + " $DERP";
+
+                const rawPoolBalance = await publicClient.readContract({ address: TARGET_TOKEN, abi: erc20Abi, functionName: 'balanceOf', args: [VAULT_ADDRESS] });
+                document.getElementById('yield-pool').innerText = Math.floor(Number(formatUnits(rawPoolBalance, 18))).toLocaleString() + " $DERP";
+            } catch (error) { console.error(error); }
+        }
+
+        function switchAction(mode) {
+            activeMode = mode;
+            const btn = document.getElementById('action-btn');
+            const inputBlock = document.getElementById('input-block');
+            document.getElementById('tab-wrap').classList.remove('active');
+            document.getElementById('tab-unwrap').classList.remove('active');
+            inputBlock.style.display = "flex";
+
+            if (mode === 'wrap') {
+                document.getElementById('tab-wrap').classList.add('active');
+                btn.innerText = "Approve & Wrap NFT";
             } else {
-                setTimeout(verifyEthersInitialization, 100);
+                document.getElementById('tab-unwrap').classList.add('active');
+                inputBlock.style.display = "none"; 
+                btn.innerText = "Pay $DERP for Random NFT";
             }
         }
-        window.addEventListener('DOMContentLoaded', verifyEthersInitialization);
 
-        async function connectAdminWallet() {
-            const activeEthers = window.ethers || ethers;
-            if (typeof activeEthers === 'undefined') {
-                pushLog("⏳ Network library delay. Wait 2 seconds and click again.");
-                return;
-            }
-            if (!window.ethereum) return pushLog("⚠️ Web3 wallet undetected.");
+        async function connectForestWallet() {
+            if (!window.viemModules) return alert("⏳ System loading modules... click again in a second.");
+            if (typeof window.ethereum === 'undefined') return alert("Extension wallet unverified.");
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: "0x1237" }] });
+                
+                document.getElementById('wallet-btn').innerText = `Connected: ${accounts[0].substring(0,6)}...`;
+                document.getElementById('wallet-btn').classList.add('connected');
+                document.getElementById('action-btn').disabled = false;
+                
+                switchAction(activeMode);
+                pushLog("🌲 Secure viem connection established.");
+                fetchBlockchainData();
+            } catch (err) { console.error(err); }
+        }
+
+        async function executeConversion() {
+            const btn = document.getElementById('action-btn');
+            const inputVal = document.getElementById('action-input').value;
+            const { createWalletClient, createPublicClient, custom, http, parseEther } = window.viemModules;
             
             try {
-                pushLog("🔮 Contacting wallet extension...");
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const activeUser = accounts[0]; 
-                
-                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ROBINHOOD_CHAIN_ID }] });
-                
-                const browserProvider = new activeEthers.BrowserProvider(window.ethereum);
-                userWalletSigner = await browserProvider.getSigner();
-                
-                const tempContract = new activeEthers.Contract(VAULT_ADDRESS, vaultAbi, browserProvider);
-                const contractOwner = await tempContract.owner();
+                btn.disabled = true;
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                const client = createWalletClient({ account: accounts[0], chain: robinhoodChain, transport: custom(window.ethereum) });
+                const publicClient = createPublicClient({ chain: robinhoodChain, transport: http() });
 
-                if (contractOwner.toLowerCase() !== activeUser.toLowerCase()) {
-                    pushLog("⛔ Security Rejection: Wallet is not owner.");
-                    return;
+                if (activeMode === 'wrap') {
+                    const id = BigInt(inputVal);
+                    if (!inputVal) return alert("Please specify a Token ID.");
+                    
+                    btn.innerText = "Approving Transfer...";
+                    const { request: appReq } = await publicClient.simulateContract({ account: accounts[0], address: NFT_CONTRACT, abi: erc721Abi, functionName: 'approve', args: [VAULT_ADDRESS, id] });
+                    const appHash = await client.writeContract(appReq);
+                    await publicClient.waitForTransactionReceipt({ hash: appHash });
+
+                    btn.innerText = "Executing Wrap...";
+                    const { request: wrapReq } = await publicClient.simulateContract({ account: accounts[0], address: VAULT_ADDRESS, abi: vaultAbi, functionName: 'wrap', args: [id] });
+                    const wrapHash = await client.writeContract(wrapReq);
+                    await publicClient.waitForTransactionReceipt({ hash: wrapHash });
+                    pushLog(`✨ Relic #${id} successfully wrapped!`);
+                } else {
+                    btn.innerText = "Approving $DERP...";
+                    const { request: appReq } = await publicClient.simulateContract({ account: accounts[0], address: TARGET_TOKEN, abi: erc20Abi, functionName: 'approve', args: [VAULT_ADDRESS, parseEther("100000000")] });
+                    const appHash = await client.writeContract(appReq);
+                    await publicClient.waitForTransactionReceipt({ hash: appHash });
+
+                    btn.innerText = "Drawing Random Item...";
+                    const { request: unwrapReq } = await publicClient.simulateContract({ account: accounts[0], address: VAULT_ADDRESS, abi: vaultAbi, functionName: 'unwrap' });
+                    const unwrapHash = await client.writeContract(unwrapReq);
+                    await publicClient.waitForTransactionReceipt({ hash: unwrapHash });
+                    pushLog("✨ Random Relic extracted successfully!");
                 }
-
-                document.getElementById('wallet-btn').innerText = `Guardian: ${activeUser.substring(0,6)}...`;
-                document.getElementById('wallet-btn').classList.add('connected');
-                document.getElementById('sanctum-content').style.display = "block";
-                pushLog("🔓 Access cleared. Welcome back to the Sherwood Sanctum.");
-            } catch (err) { pushLog(`❌ Connection Error: ${err.message || err}`); }
+                fetchBlockchainData();
+            } catch (error) { pushLog("❌ Transaction reverted."); console.error(error); }
+            btn.disabled = false; switchAction(activeMode);
         }
 
-        async function executeAdminBatchDeposit() {
-            const activeEthers = window.ethers || ethers;
-            const rawInput = document.getElementById('batch-deposit-input').value;
-            if(!rawInput) return alert("Please specify token IDs.");
-            const idArray = rawInput.split(',').map(item => parseInt(item.trim())).filter(item => !isNaN(item));
-            const vault = new activeEthers.Contract(VAULT_ADDRESS, vaultAbi, userWalletSigner);
-            const nft = new activeEthers.Contract(NFT_CONTRACT, ["function setApprovalForAll(address op, bool app) external","function isApprovedForAll(address o, address op) external view returns (bool)"], userWalletSigner);
-            try {
-                pushLog("🛡️ Checking core bulk NFT permissions...");
-                const isApproved = await nft.isApprovedForAll(await userWalletSigner.getAddress(), VAULT_ADDRESS);
-                if(!isApproved) { pushLog("⏳ Signing bulk operator allowance..."); let approveTx = await nft.setApprovalForAll(VAULT_ADDRESS, true); await approveTx.wait(); }
-                pushLog(`📦 Sending batch write block (${idArray.length} items)...`);
-                let tx = await vault.adminBatchDeposit(idArray); await tx.wait();
-                pushLog("✨ Seeding processed successfully.");
-            } catch(e) { pushLog(`❌ Batch deposit failed.`); }
-        }
-
-        async function executeAdminLiquidityInjection() {
-            const activeEthers = window.ethers || ethers;
-            const val = document.getElementById('liquidity-input').value;
-            if(!val) return alert("Specify an amount.");
-            const token = new activeEthers.Contract(TARGET_TOKEN, erc20Abi, userWalletSigner);
-            try { pushLog("💸 Discharging direct ERC-20 transfer payload..."); let tx = await token.transfer(VAULT_ADDRESS, activeEthers.parseEther(val)); await tx.wait(); pushLog("✨ Liquidity injected."); } catch(e) { pushLog("❌ Injection transfer failed."); }
-        }
-
-        async function executeAdminFeeAdjustment() {
-            const activeEthers = window.ethers || ethers;
-            const bps = document.getElementById('fee-input').value;
-            if(!bps) return alert("Enter BPS value.");
-            const vault = new activeEthers.Contract(VAULT_ADDRESS, vaultAbi, userWalletSigner);
-            try { pushLog("⚙️ Sending fee modification configuration..."); let tx = await vault.setWrapFee(parseInt(bps)); await tx.wait(); pushLog("✨ Contract fees updated."); } catch(e) { pushLog("❌ Update failed."); }
-        }
-
-        async function executeEmergencyTokenClawback() {
-            const activeEthers = window.ethers || ethers;
-            const val = document.getElementById('w-tok').value;
-            if(!val) return alert("Enter token quantity.");
-            const vault = new activeEthers.Contract(VAULT_ADDRESS, vaultAbi, userWalletSigner);
-            try { pushLog("🚨 Broadcasting token emergency clawback..."); let tx = await vault.emergencyWithdrawTokens(activeEthers.parseEther(val)); await tx.wait(); pushLog("✨ Tokens returned successfully."); } catch(e) { pushLog("❌ Token clawback failed."); }
-        }
-
-        async function executeEmergencyNftClawback() {
-            const activeEthers = window.ethers || ethers;
-            const id = document.getElementById('w-nft').value;
-            if(!id) return alert("Enter Token ID.");
-            const vault = new activeEthers.Contract(VAULT_ADDRESS, vaultAbi, userWalletSigner);
-            try { pushLog(`🚨 Broadcasting NFT release for ID #${id}...`); let tx = await vault.emergencyWithdrawNFT(parseInt(id)); await tx.wait(); pushLog(`✨ NFT ID #${id} returned safely.`); } catch(e) { pushLog("❌ NFT clawback failed."); }
-        }
+        function pushLog(message) { document.getElementById('ledger-content').innerHTML = `<div>${message}</div>`; }
+        window.addEventListener('DOMContentLoaded', () => { fetchBlockchainData(); setInterval(fetchBlockchainData, 30000); });
     </script>
 </body>
 </html>
