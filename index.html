@@ -63,7 +63,6 @@
 
         const pushLog = (m) => { document.getElementById('ledger-content').innerText = m; };
 
-        // FIX: Active waiting loop checks for window.ethers object properties every 100ms
         function verifyEthersInitialization() {
             if (typeof window.ethers !== 'undefined' || typeof ethers !== 'undefined') {
                 pushLog("🔒 Sanctum locked. Connect admin wallet.");
