@@ -5,10 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sherwood Vault - Admin Sanctum</title>
     
-    <!-- Ultra-fast ESM module import for Viem -->
+    <!-- Ultra-fast Dual-Network Module Loader for Viem -->
     <script type="module">
-        import { createWalletClient, createPublicClient, custom, http, parseEther } from "https://esm.sh";
+        import { createWalletClient, createPublicClient, custom, http, parseEther } from "https://jsdelivr.net";
         window.viemModules = { createWalletClient, createPublicClient, custom, http, parseEther };
+    </script>
+    <script type="module">
+        if (!window.viemModules) {
+            import { createWalletClient, createPublicClient, custom, http, parseEther } from "https://unpkg.com";
+            window.viemModules = { createWalletClient, createPublicClient, custom, http, parseEther };
+        }
     </script>
     
     <style>
@@ -17,7 +23,7 @@
         .admin-title { font-size: 16px; color: #ff6b6b; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; text-align: center; letter-spacing: 1px; }
         .sect-title { font-size: 11px; color: #b57c7c; text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px 0; font-family: -apple-system, sans-serif; border-bottom: 1px dashed #4a1c1c; padding-bottom: 4px; }
         .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-        .input-field { background: #120d0d; border: 1px solid #3d1d1d; color: #ffffff; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 13px; }
+        .input-field { background: #120d0d; border: 1px solid #3d1d1d; color: #ffffff; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 13px; width: 94%; }
         .admin-btn { background: linear-gradient(135deg, #3d1a1a 0%, #261111 100%); border: 1px solid #ff6b6b; color: #ff6b6b; font-family: Georgia, serif; font-size: 13px; font-weight: bold; width: 100%; padding: 12px; border-radius: 8px; cursor: pointer !important; transition: all 0.3s ease; }
         .admin-btn:hover { background: #ff6b6b; color: #0b0f0c; box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
         .wallet-top-btn { background: none; border: 1px dashed #4a1c1c; color: #a88787; width: 100%; padding: 10px; font-family: Georgia, serif; font-size: 13px; border-radius: 8px; margin-bottom: 16px; cursor: pointer !important; }
@@ -49,8 +55,8 @@
             </div>
             <div class="sect-title">4. Emergency Extraction Procedures</div>
             <div style="display: flex; gap: 8px; margin-top: 4px;">
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;"><input type="number" class="input-field" id="withdraw-token-input" placeholder="Tokens"><button class="admin-btn" style="font-size:11px;" onclick="executeEmergencyTokenClawback()">Clawback $DERP</button></div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;"><input type="number" class="input-field" id="withdraw-nft-input" placeholder="NFT ID"><button class="admin-btn" style="font-size:11px;" onclick="executeEmergencyNftClawback()">Clawback NFT</button></div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;"><input type="number" class="input-field" id="withdraw-token-input" placeholder="Tokens" style="width:85%;"><button class="admin-btn" style="font-size:11px;" onclick="executeEmergencyTokenClawback()">Clawback $DERP</button></div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;"><input type="number" class="input-field" id="withdraw-nft-input" placeholder="NFT ID" style="width:85%;"><button class="admin-btn" style="font-size:11px;" onclick="executeEmergencyNftClawback()">Clawback NFT</button></div>
             </div>
         </div>
         <div class="ledger-box"><div class="ledger-content" id="ledger-content">🔒 Checking system scripts...</div></div>
